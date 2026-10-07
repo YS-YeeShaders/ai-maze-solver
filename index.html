@@ -1,0 +1,531 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>3D Evolutionary AI Maze Solver</title>
+  <style>
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+      user-select: none;
+    }
+    body {
+      background-color: #0b0c0e;
+      color: #e0e0e0;
+      font-family: Tahoma, Verdana, Arial, sans-serif;
+      overflow: hidden;
+      height: 100vh;
+      display: flex;
+      flex-direction: column;
+    }
+    #canvas-container {
+      flex: 1;
+      width: 100%;
+      height: calc(100vh - 140px);
+      position: relative;
+    }
+    canvas {
+      display: block;
+      width: 100%;
+      height: 100%;
+    }
+    /* 2010 Web 2.0 Glossy Panel */
+    .ui-panel {
+      background: linear-gradient(180deg, #3a3f47 0%, #1f2329 50%, #121518 51%, #1a1d22 100%);
+      border-bottom: 2px solid #484e57;
+      box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.3), 0 4px 10px rgba(0, 0, 0, 0.8);
+      padding: 8px 12px;
+      z-index: 10;
+    }
+    .tabs-container {
+      display: flex;
+      gap: 3px;
+      overflow-x: auto;
+      padding-bottom: 4px;
+    }
+    .tab-btn {
+      background: linear-gradient(180deg, #505662 0%, #2a2e36 50%, #1c2026 51%, #323842 100%);
+      border: 1px solid #111;
+      border-radius: 4px 4px 0 0;
+      color: #cccccc;
+      padding: 4px 10px;
+      font-size: 11px;
+      font-weight: bold;
+      cursor: pointer;
+      text-shadow: 0 -1px 0 #000;
+      box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.25);
+      position: relative;
+      display: flex;
+      align-items: center;
+      gap: 4px;
+    }
+    .tab-btn:hover {
+      background: linear-gradient(180deg, #626977 0%, #353a44 50%, #252930 51%, #3f4652 100%);
+      color: #fff;
+    }
+    .tab-btn.active {
+      background: linear-gradient(180deg, #3880e8 0%, #1d52b4 50%, #123d91 51%, #2365d6 100%);
+      color: #ffffff;
+      border-color: #0b2559;
+      box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.4), 0 0 8px rgba(56, 128, 232, 0.6);
+    }
+    .goal-indicator {
+      width: 6px;
+      height: 6px;
+      border-radius: 50%;
+      background-color: #33ff33;
+      box-shadow: 0 0 5px #33ff33;
+      display: inline-block;
+    }
+    .controls-bar {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 15px;
+      margin-top: 6px;
+      background: linear-gradient(180deg, #25282e 0%, #141619 100%);
+      padding: 6px 12px;
+      border: 1px solid #33373e;
+      border-radius: 5px;
+      box-shadow: inset 0 1px 3px rgba(0, 0, 0, 0.6);
+    }
+    .info-stats {
+      font-size: 12px;
+      color: #7bf0ff;
+      text-shadow: 0 0 3px rgba(123, 240, 255, 0.4);
+      display: flex;
+      gap: 15px;
+    }
+    .info-stats span {
+      color: #ffffff;
+      font-weight: bold;
+    }
+    .speed-control {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+    .speed-label {
+      font-size: 11px;
+      font-weight: bold;
+      color: #bbb;
+      text-transform: uppercase;
+    }
+    /* 2010 Web 2.0 Glossy Button */
+    .btn-2010 {
+      background: linear-gradient(180deg, #4c5460 0%, #23272d 50%, #191c20 51%, #2c323a 100%);
+      border: 1px solid #000;
+      border-radius: 3px;
+      color: #fff;
+      padding: 4px 10px;
+      font-size: 11px;
+      font-weight: bold;
+      cursor: pointer;
+      text-shadow: 0 -1px 0 #000;
+      box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.35), 0 1px 2px rgba(0,0,0,0.5);
+    }
+    .btn-2010:hover {
+      background: linear-gradient(180deg, #5c6675 0%, #2e333b 50%, #22262c 51%, #373e48 100%);
+    }
+    .btn-2010:active {
+      background: linear-gradient(180deg, #181b1f 0%, #252930 100%);
+      box-shadow: inset 0 1px 3px rgba(0,0,0,0.8);
+    }
+    .btn-preset {
+      background: linear-gradient(180deg, #2e6243 0%, #183e28 50%, #0e2a1a 51%, #1f4f34 100%);
+      border-color: #08170e;
+    }
+    .btn-preset:hover {
+      background: linear-gradient(180deg, #3a7a54 0%, #204f33 50%, #143b24 51%, #286342 100%);
+    }
+    .slider-2010 {
+      accent-color: #2365d6;
+      cursor: pointer;
+    }
+  </style>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/controls/OrbitControls.js"></script>
+</head>
+<body>
+
+  <div class="ui-panel">
+    <div class="tabs-container" id="tabs-bar"></div>
+    <div class="controls-bar">
+      <div class="info-stats">
+        <div>GEN: <span id="val-gen">1</span></div>
+        <div>EVO IN: <span id="val-timer">10.0s</span></div>
+        <div>BEST LAST GEN: <span id="val-best">N/A</span></div>
+      </div>
+      <div class="speed-control">
+        <span class="speed-label">Speed:</span>
+        <input type="range" id="speed-slider" class="slider-2010" min="1" max="1000" value="60" style="width:110px;">
+        <span id="speed-val" style="font-size:11px; font-weight:bold; width:65px;">60 FPS</span>
+        <button class="btn-2010 btn-preset" onclick="setSpeed(60)">1x</button>
+        <button class="btn-2010 btn-preset" onclick="setSpeed(300)">5x</button>
+        <button class="btn-2010 btn-preset" onclick="setSpeed(600)">10x</button>
+        <button class="btn-2010 btn-preset" onclick="setSpeed(1000)">MAX</button>
+        <button class="btn-2010" onclick="resetMaze()">New Maze</button>
+      </div>
+    </div>
+  </div>
+
+  <div id="canvas-container"></div>
+
+  <script>
+    const NUM_SIMULATIONS = 20;
+    const GRID_SIZE = 20;
+    const TARGET_EVO_SECONDS = 10.0;
+    const BASE_FPS = 60;
+    const STEPS_PER_EVOLUTION = Math.floor(BASE_FPS * TARGET_EVO_SECONDS);
+
+    const ALPHA = 0.1;
+    const GAMMA = 0.9;
+    const EPSILON_START = 0.8;
+    const EPSILON_MIN = 0.05;
+    const EPSILON_DECAY = 0.995;
+
+    const ACTIONS = [[-1, 0], [0, 1], [1, 0], [0, -1]];
+    const START_POS = [0, 0];
+    const GOAL_POS = [GRID_SIZE - 1, GRID_SIZE - 1];
+
+    let maze = [];
+    let agents = [];
+    let activeTab = 0;
+    let cycleSteps = 0;
+    let generation = 1;
+    let bestLastGenText = "N/A";
+    let speedFPS = 60;
+
+    // --- MAZE SOLVABILITY ---
+    function isSolvable(grid) {
+      const queue = [[START_POS[0], START_POS[1]]];
+      const visited = new Set([`${START_POS[0]},${START_POS[1]}`]);
+      while (queue.length > 0) {
+        const [r, c] = queue.shift();
+        if (r === GOAL_POS[0] && c === GOAL_POS[1]) return true;
+        for (const [dr, dc] of ACTIONS) {
+          const nr = r + dr, nc = c + dc;
+          if (nr >= 0 && nr < GRID_SIZE && nc >= 0 && nc < GRID_SIZE && grid[nr][nc] === 0) {
+            const key = `${nr},${nc}`;
+            if (!visited.has(key)) {
+              visited.add(key);
+              queue.push([nr, nc]);
+            }
+          }
+        }
+      }
+      return false;
+    }
+
+    function generateValidMaze() {
+      while (true) {
+        const grid = Array.from({ length: GRID_SIZE }, () =>
+          Array.from({ length: GRID_SIZE }, () => (Math.random() < 0.3 ? 1 : 0))
+        );
+        grid[START_POS[0]][START_POS[1]] = 0;
+        grid[GOAL_POS[0]][GOAL_POS[1]] = 0;
+        if (isSolvable(grid)) return grid;
+      }
+    }
+
+    // --- Q-LEARNING AGENT ---
+    class QLearningAgent {
+      constructor(id) {
+        this.id = id;
+        this.qTable = Array.from({ length: GRID_SIZE }, () =>
+          Array.from({ length: GRID_SIZE }, () => new Float32Array(4))
+        );
+        this.epsilon = EPSILON_START;
+        this.resetPosition();
+      }
+
+      resetPosition() {
+        this.state = [...START_POS];
+        this.trail = [[...START_POS]];
+        this.cumulativeReward = 0;
+        this.reachedGoal = false;
+        this.steps = 0;
+      }
+
+      chooseAction() {
+        if (Math.random() < this.epsilon) {
+          return Math.floor(Math.random() * 4);
+        }
+        const [r, c] = this.state;
+        const qVals = this.qTable[r][c];
+        let maxVal = -Infinity, bestAction = 0;
+        for (let a = 0; a < 4; a++) {
+          if (qVals[a] > maxVal) {
+            maxVal = qVals[a];
+            bestAction = a;
+          }
+        }
+        return bestAction;
+      }
+
+      learn(state, action, reward, nextState) {
+        const [r, c] = state;
+        const [nr, nc] = nextState;
+        const oldVal = this.qTable[r][c][action];
+        const nextMax = Math.max(...this.qTable[nr][nc]);
+        this.qTable[r][c][action] = (1 - ALPHA) * oldVal + ALPHA * (reward + GAMMA * nextMax);
+      }
+    }
+
+    function stepAgent(agent) {
+      if (agent.reachedGoal) return;
+      const action = agent.chooseAction();
+      const [r, c] = agent.state;
+      const [dr, dc] = ACTIONS[action];
+      const nr = r + dr, nc = c + dc;
+
+      let reward = -0.1;
+      let nextState = [nr, nc];
+
+      if (nr < 0 || nr >= GRID_SIZE || nc < 0 || nc >= GRID_SIZE || maze[nr][nc] === 1) {
+        reward = -1;
+        nextState = [r, c];
+      } else if (nr === GOAL_POS[0] && nc === GOAL_POS[1]) {
+        reward = 100;
+        agent.reachedGoal = true;
+      }
+
+      agent.learn(agent.state, action, reward, nextState);
+      agent.state = nextState;
+      agent.cumulativeReward += reward;
+      agent.steps++;
+
+      const lastTrail = agent.trail[agent.trail.length - 1];
+      if (lastTrail[0] !== nextState[0] || lastTrail[1] !== nextState[1]) {
+        agent.trail.push([...nextState]);
+      }
+    }
+
+    // --- THREE.JS GRAPHICS SETUP ---
+    const container = document.getElementById('canvas-container');
+    const scene = new THREE.Scene();
+    scene.background = new THREE.Color(0x0e1013);
+
+    const camera = new THREE.PerspectiveCamera(45, container.clientWidth / container.clientHeight, 0.1, 1000);
+    camera.position.set(GRID_SIZE * 0.8, GRID_SIZE * 1.2, GRID_SIZE * 1.5);
+
+    const renderer = new THREE.WebGLRenderer({ antialias: true });
+    renderer.setSize(container.clientWidth, container.clientHeight);
+    renderer.shadowMap.enabled = true;
+    container.appendChild(renderer.domElement);
+
+    const controls = new THREE.OrbitControls(camera, renderer.domElement);
+    controls.target.set(GRID_SIZE / 2, 0, GRID_SIZE / 2);
+    controls.update();
+
+    const ambientLight = new THREE.AmbientLight(0xffffff, 0.6);
+    scene.add(ambientLight);
+
+    const dirLight = new THREE.DirectionalLight(0xffffff, 0.8);
+    dirLight.position.set(GRID_SIZE, GRID_SIZE * 1.5, GRID_SIZE * 0.5);
+    dirLight.castShadow = true;
+    scene.add(dirLight);
+
+    // Dynamic Geometry Objects
+    let mazeGroup = new THREE.Group();
+    scene.add(mazeGroup);
+
+    const agentMeshes = [];
+    const trailGeometry = new THREE.BufferGeometry();
+    const trailMaterial = new THREE.LineBasicMaterial({ color: 0x33b5ff, linewidth: 3 });
+    const trailLine = new THREE.Line(trailGeometry, trailMaterial);
+    scene.add(trailLine);
+
+    const wallGeo = new THREE.BoxGeometry(0.95, 0.8, 0.95);
+    const wallMat = new THREE.MeshStandardMaterial({ color: 0x2b303a, roughness: 0.4 });
+
+    const floorGeo = new THREE.BoxGeometry(0.98, 0.1, 0.98);
+    const floorMat1 = new THREE.MeshStandardMaterial({ color: 0x5a6270 });
+    const floorMat2 = new THREE.MeshStandardMaterial({ color: 0x484f5c });
+
+    const agentGeo = new THREE.SphereGeometry(0.3, 16, 16);
+    const activeAgentMat = new THREE.MeshStandardMaterial({ color: 0x2365d6, roughness: 0.2 });
+    const inactiveAgentMat = new THREE.MeshStandardMaterial({ color: 0x777777, opacity: 0.7, transparent: true });
+
+    const goalGeo = new THREE.SphereGeometry(0.35, 16, 16);
+    const goalMat = new THREE.MeshStandardMaterial({ color: 0x22cc44, emissive: 0x116622 });
+
+    function render3DMaze() {
+      while (mazeGroup.children.length > 0) {
+        mazeGroup.remove(mazeGroup.children[0]);
+      }
+
+      for (let r = 0; r < GRID_SIZE; r++) {
+        for (let c = 0; c < GRID_SIZE; c++) {
+          if (maze[r][c] === 1) {
+            const wall = new THREE.Mesh(wallGeo, wallMat);
+            wall.position.set(c + 0.5, 0.4, r + 0.5);
+            mazeGroup.add(wall);
+          } else {
+            const floor = new THREE.Mesh(floorGeo, (r + c) % 2 === 0 ? floorMat1 : floorMat2);
+            floor.position.set(c + 0.5, -0.05, r + 0.5);
+            mazeGroup.add(floor);
+          }
+        }
+      }
+
+      const goal = new THREE.Mesh(goalGeo, goalMat);
+      goal.position.set(GOAL_POS[1] + 0.5, 0.4, GOAL_POS[0] + 0.5);
+      mazeGroup.add(goal);
+    }
+
+    function initAgentMeshes() {
+      for (let i = 0; i < NUM_SIMULATIONS; i++) {
+        const mesh = new THREE.Mesh(agentGeo, i === activeTab ? activeAgentMat : inactiveAgentMat);
+        mesh.position.set(START_POS[1] + 0.5, 0.3, START_POS[0] + 0.5);
+        scene.add(mesh);
+        agentMeshes.push(mesh);
+      }
+    }
+
+    // --- UI HELPERS ---
+    const tabsBar = document.getElementById('tabs-bar');
+    function initTabs() {
+      tabsBar.innerHTML = '';
+      for (let i = 0; i < NUM_SIMULATIONS; i++) {
+        const btn = document.createElement('div');
+        btn.className = `tab-btn ${i === activeTab ? 'active' : ''}`;
+        btn.id = `tab-${i}`;
+        btn.onclick = () => selectTab(i);
+        btn.innerHTML = `<span>#${i + 1}</span><span class="goal-indicator" id="ind-${i}" style="display:none;"></span>`;
+        tabsBar.appendChild(btn);
+      }
+    }
+
+    function selectTab(idx) {
+      activeTab = idx;
+      document.querySelectorAll('.tab-btn').forEach((b, i) => {
+        b.classList.toggle('active', i === activeTab);
+      });
+      agentMeshes.forEach((m, i) => {
+        m.material = (i === activeTab) ? activeAgentMat : inactiveAgentMat;
+      });
+    }
+
+    function update3DPositions() {
+      for (let i = 0; i < NUM_SIMULATIONS; i++) {
+        const [r, c] = agents[i].state;
+        agentMeshes[i].position.set(c + 0.5, 0.3, r + 0.5);
+
+        const ind = document.getElementById(`ind-${i}`);
+        if (ind) ind.style.display = agents[i].reachedGoal ? 'inline-block' : 'none';
+      }
+
+      // Update Path Trail for Active Agent
+      const activeAgent = agents[activeTab];
+      const points = activeAgent.trail.map(p => new THREE.Vector3(p[1] + 0.5, 0.2, p[0] + 0.5));
+      trailGeometry.setFromPoints(points);
+    }
+
+    // --- SIMULATION CONTROL ---
+    function initSimulation() {
+      maze = generateValidMaze();
+      agents = Array.from({ length: NUM_SIMULATIONS }, (_, i) => new QLearningAgent(i));
+      render3DMaze();
+      initTabs();
+      initAgentMeshes();
+    }
+
+    function resetMaze() {
+      maze = generateValidMaze();
+      agents.forEach(a => a.resetPosition());
+      cycleSteps = 0;
+      render3DMaze();
+    }
+
+    function triggerEvolution() {
+      const sorted = [...agents].sort((a, b) => {
+        if (a.reachedGoal !== b.reachedGoal) return b.reachedGoal ? 1 : -1;
+        if (a.cumulativeReward !== b.cumulativeReward) return b.cumulativeReward - a.cumulativeReward;
+        return a.steps - b.steps;
+      });
+
+      const best = sorted[0];
+      bestLastGenText = `#${best.id + 1} (${best.cumulativeReward.toFixed(1)} pts)`;
+
+      // Clone Q-Table to all
+      for (let i = 0; i < NUM_SIMULATIONS; i++) {
+        for (let r = 0; r < GRID_SIZE; r++) {
+          for (let c = 0; c < GRID_SIZE; c++) {
+            agents[i].qTable[r][c].set(best.qTable[r][c]);
+          }
+        }
+        agents[i].epsilon = Math.max(EPSILON_MIN, best.epsilon * EPSILON_DECAY);
+        agents[i].resetPosition();
+      }
+
+      maze = generateValidMaze();
+      render3DMaze();
+      generation++;
+      cycleSteps = 0;
+    }
+
+    // --- SPEED SLIDER INTERACTION ---
+    const slider = document.getElementById('speed-slider');
+    const speedVal = document.getElementById('speed-val');
+
+    slider.oninput = (e) => {
+      speedFPS = parseInt(e.target.value);
+      speedVal.innerText = `${speedFPS} FPS`;
+    };
+
+    function setSpeed(val) {
+      speedFPS = val;
+      slider.value = val;
+      speedVal.innerText = `${val} FPS`;
+    }
+
+    // --- MAIN LOOP ---
+    let lastTime = performance.now();
+    let stepAccumulator = 0;
+
+    function animate(currentTime) {
+      requestAnimationFrame(animate);
+
+      const dt = (currentTime - lastTime) / 1000;
+      lastTime = currentTime;
+
+      stepAccumulator += dt * speedFPS;
+      const maxStepsPerFrame = Math.min(Math.floor(stepAccumulator), 500);
+
+      if (maxStepsPerFrame > 0) {
+        for (let s = 0; s < maxStepsPerFrame; s++) {
+          agents.forEach(stepAgent);
+          cycleSteps++;
+
+          if (cycleSteps >= STEPS_PER_EVOLUTION) {
+            triggerEvolution();
+            break;
+          }
+        }
+        stepAccumulator -= maxStepsPerFrame;
+        update3DPositions();
+      }
+
+      // UI Text Sync
+      document.getElementById('val-gen').innerText = generation;
+      const remSteps = Math.max(0, STEPS_PER_EVOLUTION - cycleSteps);
+      document.getElementById('val-timer').innerText = `${(remSteps / BASE_FPS).toFixed(1)}s`;
+      document.getElementById('val-best').innerText = bestLastGenText;
+
+      renderer.render(scene, camera);
+    }
+
+    window.onresize = () => {
+      camera.aspect = container.clientWidth / container.clientHeight;
+      camera.updateProjectionMatrix();
+      renderer.setSize(container.clientWidth, container.clientHeight);
+    };
+
+    initSimulation();
+    requestAnimationFrame(animate);
+  </script>
+</body>
+</html>
