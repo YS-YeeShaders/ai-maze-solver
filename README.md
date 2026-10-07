@@ -1,3 +1,5 @@
+[![License: CC BY-NC-SA 4.0](https://img.shields.io/badge/License-CC_BY--NC--SA_4.0-lightgrey.svg)](https://creativecommons.org/licenses/by-nc-sa/4.0/)
+
 # 3D Evolutionary AI Maze Solver 🧠🌀
 
 An interactive, browser-based 3D web application demonstrating parallel **Q-Learning** agents solving dynamically generated mazes. Features evolutionary selection cycles, adjustable high-speed physics simulation, and a retro Web 2.0 interface aesthetic.
