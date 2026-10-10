@@ -19,7 +19,7 @@ An interactive, browser-based 3D web application demonstrating parallel **Q-Lear
 
 ## 🚀 Live Demo
 
-Check out the live interactive app here: **https://yeeshaders.github.io/ai-maze-solver/**
+Check out the live interactive app here: **[https://yeeshaders.github.io/ai-maze-solver](https://ys-yeeshaders.github.io/ai-maze-solver/)/**
 
 ---
 
